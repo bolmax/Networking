@@ -9,17 +9,17 @@ import Foundation
 import Moya
 
 public final class RestApi {
-    var provider: NetworkingProvider<MOEMultiTarget>
+    var provider: NetworkingProvider<WrappedMultiTarget>
 
     public init(
-        provider: NetworkingProvider<MOEMultiTarget>
+        provider: NetworkingProvider<WrappedMultiTarget>
     ) {
         self.provider = provider
     }
 
-    public func request<ResponseType: Decodable>(_ target: MOETargetType) async throws -> ResponseType {
+    public func request<ResponseType: Decodable>(_ target: TargetTypeProtocol) async throws -> ResponseType {
         return try await provider.request(
-            MOEMultiTarget(target: target)
+            WrappedMultiTarget(target: target)
         )
     }
 }
