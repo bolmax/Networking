@@ -84,11 +84,14 @@ private extension NetworkLogPlugin {
         output.append("URL: \(target.baseURL.absoluteString)\(target.path)\(separator)")
         
         if let httpResponse = response as? HTTPURLResponse {
-            output.append("Code: \(httpResponse.statusCode)\(separator)")
+            output.append("Status Code: \(httpResponse.statusCode)\(separator)")
         }
-        
         if let data = data, let prettyPrinted = self.prettyPrintedJSONString(from: data) {
             output.append("Response:\(separator)\(prettyPrinted)")
+        } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
+            output.append("Response:\(separator)\(responseString)")
+        } else {
+            output.append("Response: Can't serialize the response\(separator)")
         }
         
         output.append(separator)
