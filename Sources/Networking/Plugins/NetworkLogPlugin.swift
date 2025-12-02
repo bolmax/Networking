@@ -83,28 +83,55 @@ private extension NetworkLogPlugin {
         output.append("\(separator)[\(date)]\(separator)")
         output.append("URL: \(target.baseURL.absoluteString)\(target.path)\(separator)")
         
+        // MARK: - HTTP Info
         if let httpResponse = response as? HTTPURLResponse {
             output.append("Status Code: \(httpResponse.statusCode)\(separator)")
-        }
-        if let data = data, let prettyPrinted = self.prettyPrintedJSONString(from: data) {
-            output.append("Response:\(separator)\(prettyPrinted)")
-        } else if let data = data, let responseString = String(data: data, encoding: .utf8) {
-            output.append("Response:\(separator)\(responseString)")
-        } else {
-            output.append("Response: Can't serialize the response\(separator)")
+            output.append("Headers: \(httpResponse.allHeaderFields)\(separator)")
         }
         
-        output.append(separator)
+        // MARK: - No Data
+        guard let data = data else {
+            output.append("Response: <no data>\(separator)")
+            return output
+        }
+        
+        // MARK: - JSON Pretty Print Attempt
+        let pretty = prettyPrintedJSONString(from: data) // (string, error)
+        
+        if let json = pretty.string {
+            output.append("Response (JSON):\(separator)\(json)\(separator)")
+            return output
+        }
+        if let jsonError = pretty.error {
+            output.append("JSON parse error: \(jsonError.localizedDescription)\(separator)")
+        }
+        
+        // MARK: - UTF-8 Fallback
+        if let utf8 = String(data: data, encoding: .utf8) {
+            output.append("Response (UTF-8):\(separator)\(utf8)\(separator)")
+            return output
+        }
+        
+        // MARK: - Raw Bytes Fallback
+        output.append("Response: <binary or invalid UTF-8>\(separator)")
+        output.append("Raw bytes: \(data as NSData)\(separator)")
         
         return output
     }
     
-    func prettyPrintedJSONString(from data: Data) -> NSString? {
-        
-        guard let object = try? JSONSerialization.jsonObject(with: data, options: []),
-            let data = try? JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted]),
-            let prettyPrintedString = NSString(data: data, encoding: String.Encoding.utf8.rawValue) else { return nil }
-        
-        return prettyPrintedString
+    func prettyPrintedJSONString(from data: Data) -> (string: String?, error: Error?) {
+        do {
+            let object = try JSONSerialization.jsonObject(with: data, options: [])
+            let prettyData = try JSONSerialization.data(withJSONObject: object, options: [.prettyPrinted])
+
+            if let string = String(data: prettyData, encoding: .utf8) {
+                return (string, nil)
+            } else {
+                return (nil, NSError(domain: "PrettyPrint", code: 2,
+                                     userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"]))
+            }
+        } catch {
+            return (nil, error)
+        }
     }
 }
