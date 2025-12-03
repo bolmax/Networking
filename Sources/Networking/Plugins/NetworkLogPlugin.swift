@@ -85,13 +85,12 @@ private extension NetworkLogPlugin {
         
         // MARK: - HTTP Info
         if let httpResponse = response as? HTTPURLResponse {
-            output.append("Status Code: \(httpResponse.statusCode)\(separator)")
-            output.append("Headers: \(httpResponse.allHeaderFields)\(separator)")
+            output.append("HTTP Status Code: \(httpResponse.statusCode)\(separator)")
         }
         
         // MARK: - No Data
         guard let data = data else {
-            output.append("Response: <no data>\(separator)")
+            output.append("HTTP Response: <No data>\(separator)")
             return output
         }
         
@@ -99,7 +98,7 @@ private extension NetworkLogPlugin {
         let pretty = prettyPrintedJSONString(from: data) // (string, error)
         
         if let json = pretty.string {
-            output.append("Response (JSON):\(separator)\(json)\(separator)")
+            output.append("HTTP Response (JSON):\(separator)\(json)\(separator)")
             return output
         }
         if let jsonError = pretty.error {
@@ -127,8 +126,14 @@ private extension NetworkLogPlugin {
             if let string = String(data: prettyData, encoding: .utf8) {
                 return (string, nil)
             } else {
-                return (nil, NSError(domain: "PrettyPrint", code: 2,
-                                     userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"]))
+                return (
+                    nil,
+                    NSError(
+                        domain: "PrettyPrint",
+                        code: 2,
+                        userInfo: [NSLocalizedDescriptionKey: "UTF-8 encoding failed"]
+                    )
+                )
             }
         } catch {
             return (nil, error)
